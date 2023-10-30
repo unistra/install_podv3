@@ -1,0 +1,10 @@
+#!/bin/bash
+
+export WORKON_HOME={{ venv_path }}
+export VIRTUALENVWRAPPER_PYTHON=/usr/bin/{{ pythonv }}
+source /usr/local/bin/virtualenvwrapper.sh
+su pod
+cd {{ django_path }}
+workon {{ venv }}
+python manage.py recorder checkDirectory
+

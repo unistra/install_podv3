@@ -1,0 +1,69 @@
+#!/bin/bash
+
+
+#SBATCH -p pod   # utiliser la file hpc standard
+#BATCH -N 1-1         # nombre de noeuds min-max
+#SBATCH -t 24:00:00 # temps estimé utilisépar le scheduler slurm
+#SBATCH --gres=gpu:2   # on exige 1 GPU
+#SBATCH --exclusive
+
+
+
+# Encoding job for POD platform
+# Cyrille TOULET <cyrille.toulet@univ-lille.fr>
+# Nicolas CAN <nicolas.can@univ-lille.fr>
+
+
+# Print job info
+echo "Job running at" $(date)" with following specs:"
+echo -e " - Job name: ${SLURM_JOB_NAME}"
+echo -e " - Job ID: ${SLURM_JOB_ID}"
+echo " - Allocated nodes: ${SLURM_JOB_NODELIST}"
+echo " - Allocated CPU cores: ${SLURM_NTASKS}"
+echo -e " - Allocated GPU: /dev/nvidia${CUDA_VISIBLE_DEVICES}\n"
+
+mkdir -p {WORK_DIR}/{JOB_NAME}
+
+# Step 1: Download input file
+echo "$> scp {REMOTE_SERVER}:{REMOTE_MEDIA_PATH}/videos/{USER_ID}/{INPUT_FILE} {WORK_DIR}/{JOB_NAME}/"
+scp {REMOTE_SERVER}:{REMOTE_MEDIA_PATH}/videos/{USER_ID}/{INPUT_FILE} {WORK_DIR}/{JOB_NAME}/
+
+# Step 2: Encode video
+module load ffmpeg/ffmpeg
+module load python/python-3.6.2.i17
+
+#delee metadatas
+cd {WORK_DIR}/{JOB_NAME}/
+mv {INPUT_FILE} TMP
+echo "$> ffmpeg -i TMP -map_metadata -1 -c:v copy -c:a copy -y {INPUT_FILE}"
+#ffmpeg -i TMP -map_metadata -1 -c:v copy -c:a copy -y {INPUT_FILE}
+ffmpeg -i TMP -map_metadata -1 -c:v copy -y {INPUT_FILE}
+rm TMP
+cd
+
+echo "$> python3 {{ encode_path }}/encode_gpu.py --device ${CUDA_VISIBLE_DEVICES} --dir {WORK_DIR}/{JOB_NAME} --input {INPUT_FILE} --job ${SLURM_JOB_ID} --name {JOB_NAME}"
+python3 {{ encode_path }}/encode_gpu.py --device ${CUDA_VISIBLE_DEVICES} --dir {WORK_DIR}/{JOB_NAME} --input {INPUT_FILE} --job ${SLURM_JOB_ID} --name {JOB_NAME} --debug {DEBUG}
+module purge
+
+# Step 3: Upload output files
+scp -r {WORK_DIR}/{JOB_NAME}/{VIDEO_ID} {REMOTE_SERVER}:{REMOTE_MEDIA_PATH}/videos/{USER_ID}
+
+echo "$> scp -r {WORK_DIR}/{JOB_NAME}/{VIDEO_ID} {REMOTE_SERVER}:{REMOTE_MEDIA_PATH}/videos/{USER_ID}"
+if [ {VIDEO_ID} -lt 1000 ]
+then
+  echo "$> ssh {REMOTE_SERVER} \"cd {REMOTE_MEDIA_PATH}/videos/{USER_ID};rm -rf `printf \"%04d\" {VIDEO_ID}`; mv {VIDEO_ID} `printf \"%04d\" {VIDEO_ID}`\""
+  ssh {REMOTE_SERVER} "cd {REMOTE_MEDIA_PATH}/videos/{USER_ID};rm -rf `printf \"%04d\" {VIDEO_ID}`; mv {VIDEO_ID} `printf \"%04d\" {VIDEO_ID}`"
+fi
+
+# Step 4: Clear video files
+SIZE=$(du -sh {BASE_DIR}/{JOB_NAME})
+rm -rf {BASE_DIR}/{JOB_NAME}
+echo "End of encoding job. Release ${SIZE} for job {JOB_NAME}"
+SIZE=$(du -sh {WORK_DIR}/{JOB_NAME})
+rm -rf {WORK_DIR}/{JOB_NAME}
+echo "End of encoding job. Release ${SIZE} for job {JOB_NAME}"
+
+# Step 5: Call a custom API to report the end of encoding
+echo "ssh call import_encoded_video {VIDEO_ID}"
+echo "$> ssh {REMOTE_SERVER} \"cd {{ django_path }} && {{ venv_path }}/django_pod/bin/python manage.py import_encoded_video {VIDEO_ID}\""
+ssh {REMOTE_SERVER} "cd {{ django_path }} && {{ venv_path }}/django_pod/bin/python manage.py import_encoded_video {VIDEO_ID}"

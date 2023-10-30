@@ -1,0 +1,42 @@
+
+- name: create git temp directory
+  file:
+    path: "/tmp/git/pod"
+    recurse: yes
+    mode: 0755
+    state: directory
+  delegate_to: localhost
+  run_once: true
+
+- git:
+    repo: "{{ pod_source }}"
+    dest: "/tmp/git/pod"
+    version: "{{ version_install }}"
+  delegate_to: localhost
+  run_once: true
+
+- name: delete .git directory
+  command: "rm -rf /tmp/git/pod/.git"
+  delegate_to: localhost
+
+- synchronize:
+    src: "/tmp/git/pod/"
+    dest: "{{ django_path }}/"
+    delete: yes
+    rsync_opts:
+      - "--chown=pod:pod"
+      - "--exclude=.git"
+      - "--chmod=F0755"
+      - "--chmod=D0755"
+    use_ssh_args: yes
+
+- name: delete .git directory
+  command: "rm -rf /tmp/git/pod"
+  delegate_to: localhost
+
+- name: delete .git  directory
+  command: "rm -rf {{ django_path }}/.git"
+
+
+
+

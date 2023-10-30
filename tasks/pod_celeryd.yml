@@ -1,0 +1,58 @@
+- name: /etc/systemd/system/celeryd.service
+  become: yes
+  become_method: sudo
+  template:
+    src: ../templates/celeryd.service.j2
+    dest: /etc/systemd/system/celeryd.service
+    mode: 0744
+
+- name: default celeryd
+  become: yes
+  become_method: sudo
+  template:
+    src: ../templates/celeryd.j2
+    dest: /etc/default/celeryd
+    mode: 0744
+
+
+- name: Creates log directory
+  become: yes
+  become_method: sudo
+  file:
+    path: /var/log/celery
+    state: directory
+    owner: "{{ user }}"
+    group: "{{ group }}"
+    recurse: yes
+
+- name: Creates run directory
+  become: yes
+  become_method: sudo
+  file:
+    path: /var/run/celery
+    state: directory
+    owner: "{{ user }}"
+    group: "{{ group }}"
+    recurse: yes
+
+- name: just force systemd to reread configs
+  become: yes
+  become_method: sudo
+  systemd:
+    daemon_reload: yes
+
+- name: enable celeryd service
+  become: yes
+  become_method: sudo
+  systemd:
+    name: celeryd.service
+    state: started
+    enabled: yes
+
+
+
+
+
+
+
+

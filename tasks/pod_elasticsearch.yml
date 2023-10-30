@@ -1,0 +1,21 @@
+- name: source  "/home/{{ user }}/.bashrc"
+  become: yes
+  become_user: "{{ user }}"
+  shell: . "/home/{{ user }}/.bashrc"
+
+
+- name:  create_pod_index
+  django_manage:
+    command: create_pod_index
+    app_path: "{{ django_path }}"
+    virtualenv: "{{ venv_path }}/{{ venv }}"
+  become: yes
+  become_user: "{{ user }}"
+  when: inventory_hostname == leader
+
+
+
+
+
+
+

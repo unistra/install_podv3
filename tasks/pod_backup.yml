@@ -1,0 +1,104 @@
+- name: delete old backup dir
+  command: rm -rf {{ backup_directory }}
+  when: inventory_hostname == leader
+  ignore_errors: yes
+
+
+- name: create backup directory
+  file:
+    path: "{{ backup_directory }}"
+    owner: "{{ user }}"
+    group: "{{ group }}"
+    recurse: yes
+    state: directory
+    mode: 0755
+  when: inventory_hostname == leader
+
+- name: backup source code
+  command: cp -R {{ django_path }}/. {{ backup_directory }}/
+  when: inventory_hostname == leader
+
+- name: "{{ django_path }}"
+  command: chmod -R 777 {{ backup_directory }}
+
+- name: backup db
+  become: yes
+  become_user: postgres
+  postgresql_db:
+    name: "{{ hostvars[groups['dbservers'][0]].postgresql_databases[0].name}}"
+    owner: "{{ hostvars[groups['dbservers'][0]].postgresql_users[0].name}}"
+    state: dump
+    target: "{{ backup_directory }}/{{ hostvars[groups['dbservers'][0]].postgresql_databases[0].name}}.sql.gz"
+  when:  inventory_hostname in groups['dbservers']
+
+- name: Clean temp dir
+  file:
+    state: absent
+    path: "{{ local_temp_dir }}/"
+  delegate_to: localhost
+  run_once: True
+
+
+- name: create git temp directory
+  file:
+    path: "{{ local_temp_dir }}"
+    recurse: yes
+    mode: u=rwX,g=rwX,o=rX
+    state: directory
+  delegate_to: localhost
+  run_once: True
+
+- git:
+    repo: '{{ pod_source }}'
+    dest: "{{ local_temp_dir }}"
+    version: "{{ version_update }}"
+  delegate_to: localhost
+  run_once: True
+
+
+#supprimer le contenu du repertoire
+- name: delete  temp dirs
+  command: rm -rf {{ django_path }}/*
+  when:  inventory_hostname in groups['webservers']  or inventory_hostname in groups['encodeservers']
+
+#copier ce qu il y a sur
+- synchronize:
+    src: "{{ local_temp_dir }}/"
+    dest: "{{ django_path }}/"
+    use_ssh_args: yes
+  when:  inventory_hostname in groups['webservers']  or inventory_hostname in groups['encodeservers']
+
+- name: copy files from backup
+  command: cp {{ backup_directory }}/{{ custom_path }}/{{ item }} {{ django_path }}/{{ custom_path }}/
+  with_items:
+    - pod_nginx.conf
+    - pod_uwsgi.ini
+    - settings_local.py
+  when:  inventory_hostname in groups['webservers']  or inventory_hostname in groups['encodeservers']
+
+- name: copy static and template files from backup
+  command: cp -R {{ backup_directory }}/{{ custom_path }}/{{ item }} {{ django_path }}/{{ custom_path }}/
+  with_items:
+    - static
+    - templates
+  when:  inventory_hostname in groups['webservers']  or inventory_hostname in groups['encodeservers']
+
+- name: copy uwsgi files from backup
+  command: cp -R {{ backup_directory }}/uwsgi {{ django_path }}/
+  when:  inventory_hostname in groups['webservers']
+
+- name: "{{ django_path }}/uwsgi"
+  command: chmod -R 755 {{ django_path }}/uwsgi
+  when:  inventory_hostname in groups['webservers']
+
+
+- name: "{{ django_path }}"
+  command: chmod -R 755 {{ django_path }}
+  when:  inventory_hostname in groups['webservers']  or inventory_hostname in groups['encodeservers']
+
+- name: "{{ django_path }}"
+  command: chown -R {{ user }}:{{ group }} {{ django_path }}
+  when:  inventory_hostname in groups['webservers']  or inventory_hostname in groups['encodeservers']
+
+
+

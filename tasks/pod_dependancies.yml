@@ -1,0 +1,46 @@
+- name: "Add nodejs apt key"
+  apt_key:
+    url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
+    state: present
+
+
+- name: Install Node.js dependencies
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - curl
+    - software-properties-common
+
+- name: Add NodeSource repository
+  apt_repository:
+    repo: "deb https://deb.nodesource.com/node_18.x {{ ansible_distribution_release }} main"
+    state: present
+    update_cache: yes
+    filename: nodesource
+
+- name: Install Node.js
+  apt:
+    name: nodejs
+    state: present
+
+
+- name: Add Yarn pubkey
+  shell: curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -  >/dev/null
+
+- name: Add Yarn repo
+  shell: echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+
+- name: Update apt cache
+  apt:
+    update_cache=yes force_apt_get=yes cache_valid_time=3600
+
+- name: Install Yarn
+  apt:
+    name: yarn
+    update_cache: yes
+
+- name: install package.json with yarn
+  shell: yarn
+  args:
+    chdir: "{{ django_path }}/pod"

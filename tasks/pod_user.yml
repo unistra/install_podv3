@@ -1,0 +1,38 @@
+- name: add group {{ group }} and user {{ user }}
+  group: 
+    name: "{{ group }}"
+    state: present
+
+- name: add user {{ user }}
+  user:
+    name: "{{ user }}"
+    password: "{{ userpasswd }}"
+    shell: /bin/bash
+    groups:
+      - sudo 
+      - "{{ group }}"
+    append: yes 
+    state: present
+    createhome: yes
+
+- name: Allow 'sudo' group to have passwordless sudo
+  lineinfile:
+    dest: /etc/sudoers
+    state: present
+    regexp: '^%sudo'
+    line: '%sudo ALL=(ALL) NOPASSWD: ALL'
+    validate: 'visudo -cf %s'
+
+- name: Allow ssh key for all server
+  authorized_key:
+    user: "{{ user }}"
+    state: present
+    key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_rsa.pub') }}"
+
+
+
+
+
+  
+  
+

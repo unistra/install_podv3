@@ -1,0 +1,172 @@
+
+- name: install vsftpd
+  become: yes
+  become_method: sudo
+  apt:
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - vsftpd
+
+- name: add group {{ ftp_group }}
+  become: yes
+  become_method: sudo
+  group:
+    name: "{{ ftp_group }}"
+    state: present
+
+
+
+- name: create upload directory
+  become: yes
+  become_method: sudo
+  file:
+    path: "{{ ftp_path }}"
+    state: directory
+    mode: a-w
+    owner: nobody
+    group: nogroup
+
+- name: add user {{ ftp_user }}
+  become: yes
+  become_method: sudo
+  user:
+    name: "{{ ftp_user }}"
+    shell: /bin/bash
+    groups:
+      - "{{ ftp_group }}"
+    append: yes
+    state: present
+    home: "{{ ftp_path }}/{{ ftp_user }}"
+    createhome: yes
+
+- name: delete not used file
+  become: yes
+  become_method: sudo
+  command: rm {{ ftp_path }}/{{ ftp_user }}/{{ item }}
+  with_items:
+    - '.bash_logout'
+    - '.bashrc'
+    - '.profile'
+  ignore_errors: yes
+
+
+- name: make directory writable
+  become: yes
+  become_method: sudo
+  command: chmod -R 777 {{ ftp_path }}/{{ ftp_user }}
+
+- name: make directory writable
+  become: yes
+  become_method: sudo
+  command: chown -R {{ ftp_user }}:{{ ftp_group }} {{ ftp_path }}/{{ ftp_user }}
+
+#Tester ici Je pense qu il faut du pod:pod??
+
+- name: Start FTP Service
+  become: yes
+  become_method: sudo
+  service:
+    name: vsftpd
+    state: started
+    enabled: yes
+
+- name: conf
+  become: yes
+  become_method: sudo
+  template:
+    src: ../templates/vsftpd.conf.j2
+    dest: "/etc/vsftpd.conf"
+
+
+- name: /etc/vsftpd.userlist
+  become: yes
+  become_method: sudo
+  lineinfile:
+    path: /etc/vsftpd.userlist
+    line: "{{ ftp_user }}"
+    create: yes
+
+- name: Start FTP Service
+  become: yes
+  become_method: sudo
+  service:
+    name: vsftpd
+    state: restarted
+    enabled: yes
+
+- name: settings_local
+  become: yes
+  template:
+    src: ../templates/settings/{{ version_esup }}/settings_local.j2
+    dest: "{{ django_path }}/pod/custom/settings_local.py"
+    owner: "{{user}}"
+    group: "{{group}}"
+    mode: 0755
+
+
+- name: checkdirectory job
+  become: yes
+  template:
+    src: ../templates/recorder_checkdirectory.sh.j2
+    dest: "{{ django_path }}/recorder_checkdirectory.sh"
+    owner: "{{user}}"
+    group: "{{group}}"
+    mode: +x
+
+
+- name: makemigrations
+  django_manage:
+    command: makemigrations
+    app_path: "{{ django_path }}"
+    virtualenv: "{{ venv_path }}/{{ venv }}"
+  become: yes
+  become_user: "{{ user }}"
+
+
+- name: migrate
+  django_manage:
+    command: migrate
+    app_path: "{{ django_path }}"
+    virtualenv: "{{ venv_path }}/{{ venv }}"
+  become: yes
+  become_user: "{{ user }}"
+
+
+- name: restart nginx
+  become: yes
+  become_method: sudo
+  systemd:
+    name: nginx
+    state: restarted
+
+
+- name: restart uwsgi-pod.service
+  become: yes
+  become_method: sudo
+  systemd:
+    name: uwsgi-pod.service
+    state: restarted
+
+
+
+- name: Creates weekly backup cronjob
+  become: yes
+  blockinfile:
+    path: /etc/crontab
+    marker: "## {mark} ANSIBLE MANAGED BLOCK ##"
+    insertafter: "<body>"
+    content: |
+      */15 * * * *  root  bash {{ django_path }}/recorder_checkdirectory.sh >> /var/log/recorder.log
+
+
+
+
+
+
+
+
+
+
+
+

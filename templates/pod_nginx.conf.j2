@@ -1,0 +1,48 @@
+# mysite_nginx.conf
+# Add this line in /etc/nginx/nginx.conf
+
+# the upstream component nginx needs to connect to
+upstream django {
+    # server unix:///path/to/your/mysite/mysite.sock; # for a file socket
+    server unix://{{ django_path }}/uwsgi/podv3.sock ;
+}
+
+# configuration of the server
+server {
+    # the port your site will be served on
+    listen      80;
+    # the domain name it will serve for
+    server_name {{ pod_host }}; # substitute your machine's IP address or FQDN
+    charset     utf-8;
+
+    # max upload size
+    client_max_body_size 4G;   # adjust to taste
+	# Allow to download large files
+	uwsgi_max_temp_file_size 0;
+
+
+    # Django media
+    location /media  {
+        alias {{ media_path }};  # your Django project's media files - amend as required
+    }
+
+    location /static {
+        alias {{ django_path }}/pod/static; # your Django project's static files - amend as required
+    }
+
+{% if install_ftp == true  %}
+
+    location /records {
+        alias {{ ftp_path }};
+    }
+
+{% endif %} 
+
+
+    # Finally, send all non-media requests to the Django server.
+    location / {
+        uwsgi_pass  django;
+        include     {{ django_path }}/uwsgi_params; # the uwsgi_params file you installed
+       # track_uploads uploadp 30s;
+    }
+}

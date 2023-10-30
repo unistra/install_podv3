@@ -1,0 +1,7 @@
+SHELL=/bin/bash
+HOME=/home/pod
+PATH=/usr/bin:/bin:/usr/local/bin:/home/pod/.bin
+*/10 * * * * /home/pod/getmeetings.sh >/home/pod/log.txt
+
+
+

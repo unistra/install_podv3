@@ -1,0 +1,34 @@
+- name: "{{ root_path }}/import"
+  become: yes
+  become_method: sudo
+  file:
+    path: "{{ root_path }}/import"
+    owner: "{{ user }}"
+    group: "{{ group }}"
+    mode: 0755
+    state: directory
+
+- name: copy json files
+  become: yes
+  become_method: sudo
+  copy:
+    src: "../files/import/"
+    dest: "{{ root_path }}/import/"
+    directory_mode: yes
+    owner: "{{ user }}"
+    group: "{{ group }}"
+    mode: 0755
+
+
+
+
+
+
+
+
+
+
+
+
+
+

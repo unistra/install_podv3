@@ -1,0 +1,14 @@
+#chmod -R 755 /django/ à faire
+
+- name: haproxy.cfg
+  template:
+    src: ../templates/haproxy.cfg.j2
+    dest: "/etc/haproxy/haproxy.cfg"
+
+- name: start haproxy
+  service:
+    name: haproxy
+    state: restarted
+
+
+

@@ -1,0 +1,9 @@
+UPDATE django_site SET domain = '{{ pod_host }}', name = '{{ pod_host }}' WHERE id = 1;
+INSERT INTO auth_group VALUES ('1', 'Manager') ON CONFLICT ON CONSTRAINT auth_group_pkey DO NOTHING;
+INSERT INTO auth_group VALUES ('2', 'Can delete file') ON CONFLICT ON CONSTRAINT auth_group_pkey DO NOTHING;
+insert into video_encode_transcript_videorendition values (4,'252x240','500k','500k','500k',0,'96k','t') ON CONFLICT ON CONSTRAINT video_encode_transcript_videorendition_pkey DO NOTHING;
+insert into video_encode_transcript_videorendition values (5,'640x480','1000k','1000k','1000k',0,'96k','t') ON CONFLICT ON CONSTRAINT video_encode_transcript_videorendition_pkey DO NOTHING;
+UPDATE video_encode_transcript_videorendition  SET encode_mp4= 't' WHERE id = 3;
+update video_encode_transcript_videorendition set minrate='5000k', maxrate='5000k', video_bitrate='5000k' where id = 3;
+
+

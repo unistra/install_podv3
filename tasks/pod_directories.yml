@@ -1,0 +1,63 @@
+- name: "{{ root_path }}"
+  file:
+    path: "{{ root_path }}"
+    owner: "{{ user }}"
+    group: "{{ group }}"
+    mode: 0755
+    state: directory
+
+- name: "{{ media_path }}"
+  file:
+    path: "{{ media_path }}"
+    owner: "{{ user }}"
+    group: "www-data"
+    state: directory
+    recurse: yes
+    mode: 0755
+
+- name: "{{ static_path }}"
+  file:
+    path: "{{ media_path }}"
+    owner: "{{ user }}"
+    group: "www-data"
+    state: directory
+    recurse: yes
+    mode: 0755
+
+- name: "{{ venv_path }}"
+  file:
+    path: "{{ venv_path }}"
+    owner: "{{ user }}"
+    group: "{{ group }}"
+    state: directory
+    recurse: yes
+    mode: 0755
+
+- name: "{{ django_path }}"
+  file:
+    path: "{{ django_path }}"
+    owner: "{{ user }}"
+    group: "{{ group }}"
+    state: directory
+    recurse: yes
+    mode: 0755
+
+- name: "{{ file_upload_temp_dir }}"
+  file:
+    path: "{{ file_upload_temp_dir }}"
+    owner: "{{ user }}"
+    group: "{{ group }}"
+    state: directory
+    recurse: yes
+    mode: 0755
+
+- name: "répertoire d import "
+  file:
+    path: "{{ root_path }}/import"
+    owner: "{{ user }}"
+    group: "{{ group }}"
+    state: directory
+    recurse: yes
+    mode: 0777
+
+

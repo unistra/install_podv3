@@ -1,0 +1,8 @@
+#!/bin/bash
+export WORKON_HOME={{ venv_path }}
+export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3.8
+cd {{ django_path }}
+source /usr/local/bin/virtualenvwrapper.sh
+workon django_pod
+python manage.py index_videos --all
+

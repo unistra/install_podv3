@@ -1,0 +1,16 @@
+
+
+- name: rabbitmq initialization
+  command: "{{ item }}"
+  become: yes
+  become_method: sudo
+  with_items:
+    - rabbitmqctl add_user {{ rabbitmq_user }} {{ rabbitmq_password }}
+    - rabbitmqctl set_user_tags {{ rabbitmq_user }} administrator
+    - rabbitmqctl set_user_tags guest
+    - rabbitmqctl add_vhost {{ rabbitmq_vhost }}
+    - rabbitmqctl set_permissions -p {{ rabbitmq_vhost }} {{ rabbitmq_user }} ".*" ".*" ".*"
+  ignore_errors: true
+    
+    
+

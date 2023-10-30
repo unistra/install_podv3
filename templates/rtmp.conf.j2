@@ -1,0 +1,59 @@
+
+rtmp {
+    server {
+        listen 1935;
+
+        application raw
+        {
+                live on;
+                record off;
+
+                hls on; # activation du hls
+                hls_path /tmp/hls/raw;
+#                hls_fragment 2s;
+                hls_playlist_length 300;
+
+                allow publish 127.0.0.1; # seulement publier en local
+                allow publish all; #tout le monde peut publier
+                allow play all; # certaine adresse IP on le droit de lire
+                deny publish all; # mettre un deny à la fin pour securiser
+
+		exec_publish curl --request PATCH "https://{{ pod_host }}/rest/broadcasters/$name/" --header "Content-Type: application/json" --header "Accept: application/json" -H 'Authorization: Token {{ token_streaming }}' --data "{\"status\":true}";
+
+		exec_publish_done curl --request PATCH "https://{{ pod_host }}/rest/broadcasters/$name/" --header "Content-Type: application/json" --header "Accept: application/json" -H 'Authorization: Token {{ token_streaming }}' --data "{\"status\":false}";
+	}
+
+	application original
+	{
+		live on;
+		record off;
+
+	        allow publish 127.0.0.1; # seulement publier en local
+        	allow publish all; #tout le monde peut publier
+	        allow play all; # certaine adresse IP on le droit de lire
+        	deny publish all; # mettre un deny à la fin pour securiser
+
+
+
+                exec ffmpeg -i rtmp://localhost/$app/$name
+                        -c:v libx264 -preset veryfast -b:v 768k -vf "scale=-2:720,format=yuv420p" -g 60 -c:a aac -b:a 96k -f flv rtmp://localhost/show/$name >/tmp/ffmpeg.log 2>&1;
+
+		exec_publish curl --request PATCH "https://{{ pod_host }}/rest/broadcasters/$name/" --header "Content-Type: application/json" --header "Accept: application/json" -H 'Authorization: Token {{ token_streaming }}' --data "{\"status\":true}";
+		exec_publish_done curl --request PATCH "https://{{ pod_host }}/rest/broadcasters/$name/" --header "Content-Type: application/json" --header "Accept: application/json" -H 'Authorization: Token {{ token_streaming }}' --data "{\"status\":false}";	}
+
+        application show
+	{
+            live on; # Allows live input from above
+            meta copy;
+            record off;
+
+            hls on; # activation du hls
+#            hls_nested on; # cree un sous repertoire par stream envoye
+            hls_path /tmp/hls;
+#            hls_fragment 2s;
+            hls_playlist_length 300;
+            # Instruct clients to adjust resolution according to bandwidth
+#            hls_variant _low BANDWIDTH=600000; # Low bitrate, sub-SD resolution
+        }
+    }
+}

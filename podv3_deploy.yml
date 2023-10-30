@@ -1,0 +1,446 @@
+- hosts: webservers encodeservers nfsserver redisserver elasticsearch rabbitmq
+  gather_facts: yes
+  tasks:
+  - debug: var=ansible_default_ipv4 verbosity=0
+
+- name: pod install user
+  hosts: webservers encodeservers 
+  remote_user: root
+  tasks:
+    - include: './tasks/pod_user.yml'
+  tags:
+    - user
+
+- name: pod install packages
+  hosts: webservers encodeservers
+  remote_user: root
+  tasks:
+    - include: './tasks/pod_installpackages.yml'
+  tags:
+    - packages
+
+- name: pod install dependancies
+  hosts: webservers encodeservers
+  remote_user: root
+  tasks:
+    - include: './tasks/pod_dependancies.yml'
+  tags:
+    - dependancies
+
+
+- name: Install redis
+  hosts: redisserver
+  gather_facts: yes
+  remote_user: root
+  roles:
+    - ansible-role-redis
+  tags:
+    - redis
+
+
+- name: install nfs client
+  hosts: nfsclient nfsserver
+  remote_user: root
+  tasks:
+    - include: './tasks/pod_nfs.yml'
+  tags:
+    - nfs
+
+- name: manage directories rights
+  hosts: webservers encodeservers
+  remote_user: root
+  tasks:
+    - include: './tasks/pod_directories.yml'
+  tags:
+    - dir
+
+- name: install python & virtualenv
+  hosts: webservers encodeservers
+  remote_user: root
+  tasks:
+    - include: './tasks/pod_python_virtualenv.yml'
+  tags:
+    - python
+
+- name: source code
+  hosts: webservers encodeservers
+  remote_user: root
+  tasks:
+    - include: './tasks/pod_source.yml'
+  tags:
+    - git
+
+- name: pod applications tierces
+  hosts: webservers encodeservers
+  remote_user: root
+  tasks:
+    - include: './tasks/pod_tierces.yml'
+  tags:
+    - tierces
+
+- name: pod applications tierces encodeur
+  hosts: encodeservers
+  remote_user: root
+  tasks:
+    - include: './tasks/pod_libencode.yml'
+  tags:
+    - encode
+
+- name: Install Java and elasticsearch
+  hosts: elasticsearch
+  remote_user: root
+  roles:
+#    - { role: install_java, become: yes, become_method: sudo }
+#    - { role: ansible-role-java, become: yes, become_method: sudo }
+    - { role: ansible-role-elasticsearch, become: yes, become_method: sudo }
+#    - { role: install_elasticsearch, become: yes, become_method: sudo }
+  tasks:
+    - command: bin/elasticsearch-plugin install analysis-icu
+      become: yes
+      become_method: sudo
+      args:
+        chdir: /usr/share/elasticsearch/
+      ignore_errors: true
+
+    - service:
+        name: elasticsearch
+        state: started
+      become: yes
+      become_method: sudo
+      
+    - include: './tasks/pod_elasticsearch.yml'
+  tags:
+    - elasticsearch
+
+- name: Install postgresql database
+  hosts: dbservers
+  remote_user: root
+  roles:
+#    - role: install_postgresql
+    - role: ansible-role-postgresql
+  tags:
+    - postgresql
+
+
+- name: Install rabbitmq
+  hosts: rabbitmq
+  remote_user: root
+  roles:
+#    - { role: install_rabbitmq, become: yes, become_method: sudo }
+    - { role: ansible-role-rabbitmq, become: yes, become_method: sudo }
+  tasks:
+    - include: './tasks/pod_rabbitmq.yml'
+  tags:
+    - rabbitmq
+
+#celery sur le serveur d'encodage
+- name: Install celeryd
+  hosts: encodeservers
+  remote_user: root
+  tasks:
+    - include: './tasks/pod_celeryd.yml'
+  tags:
+    - celeryd
+
+- name: settings_local.py
+  hosts: webservers encodeservers
+  gather_facts: yes
+  remote_user: root
+  tasks:
+    - include: './tasks/pod_settings.yml'
+  tags:
+    - settings
+    - custom
+
+- name: init database
+  hosts: webservers encodeservers
+  remote_user: root
+  tasks:
+    - include: './tasks/pod_init_database.yml'
+  tags:
+    - initdb
+
+- name: create index, superuser and manage static files
+  hosts: webservers encodeservers
+  remote_user: root
+  tasks:
+    - include: './tasks/pod_init_app.yml'
+  tags:
+    - initapp
+
+- name:  nginx and uwsgi
+  hosts: webservers
+  remote_user: root
+  tasks:
+    - include: './tasks/pod_nginx.yml'
+    - include: './tasks/pod_uwsgi.yml'
+  tags:
+    - nginxuwsgi
+
+- name: update url site in table django site
+  hosts: webservers
+  remote_user: root
+  tasks:
+    - include: './tasks/pod_updateurlsite.yml'
+  tags:
+    - site
+
+- name:  ssl nginx
+  hosts: webservers
+  remote_user: root
+  tasks:
+    - include: './tasks/pod_nginx_ssl.yml'
+  tags:
+    - ssl
+
+
+- name:  custom
+  hosts: webservers encodeservers
+  remote_user: root
+  tasks:
+    - include: './tasks/pod_custom.yml'
+  tags:
+    - custom
+
+
+- name:  restart
+  hosts: webservers
+  remote_user: root
+  tasks:
+    - include: './tasks/pod_restartservices.yml'
+  tags:
+    - custom
+    #- settings
+    - restart
+
+
+- name:  ftp
+  hosts: webservers
+  remote_user: root
+  tasks:
+    - include: './tasks/pod_ftp.yml'
+  tags:
+    - ftp
+
+
+- name:  ftp user
+  hosts: webservers
+  remote_user: root
+  tasks:
+    - include: './tasks/pod_addftpuser.yml'
+  tags:
+    - ftpuser
+
+
+- name: pod import
+  hosts: webservers
+  remote_user: root
+  tasks:
+    - include: './tasks/pod_import.yml'
+  tags:
+    - import
+
+
+- name: pod backup and deploy code
+  hosts: webservers encodeservers dbservers
+  remote_user: root
+  tasks:
+    - include: './tasks/pod_backup.yml'
+  tags:
+    - backup
+
+- name: pod update
+  hosts: webservers
+  remote_user: root
+  tasks:
+    - include: './tasks/pod_update.yml'
+  tags:
+    - update
+
+- name: Manual launching of uswgi
+  hosts: webservers
+  remote_user: root
+  tasks:
+    - name: uwsgi
+      command: "/usr/local/bin/uwsgi --ini {{django_path}}/pod/custom/pod_uwsgi.ini --enable-threads --pidfile /tmp/pod.pid"
+  tags:
+    - uwsgilaunch
+
+- name: restart nginc and uwsgi
+  hosts: webservers
+  remote_user: root
+  tasks:
+    - name: nginx and uwsgi restart
+      shell: |
+        systemctl restart nginx
+        systemctl stop uwsgi-pod
+        systemctl start uwsgi-pod
+  tags:
+    - restartnginx
+
+- name: Manual launching of Celery
+  hosts: encodeservers
+  remote_user: pod
+  tasks:
+    - name: celery
+      shell: |
+        cd {{django_path}}
+        workon django_pod
+        sudo systemctl stop celeryd
+        sudo systemctl start celeryd
+  tags:
+    - restartcelery
+
+
+
+- name: copy commands
+  hosts: webservers
+  remote_user: root
+  tasks:
+
+    - name: copy command
+      become: yes
+      become_method: sudo
+      copy:
+        src: "../files/download_video_source_file.py"
+        dest: "{{ django_path }}/pod/video/management/commands/"
+        directory_mode: yes
+        owner: "{{ user }}"
+        group: "{{ group }}"
+        mode: 0755
+    - name: copy command
+      become: yes
+      become_method: sudo
+      copy:
+        src: "../files/import_data_encodings.py"
+        dest: "{{ django_path }}/pod/video/management/commands/"
+        directory_mode: yes
+        owner: "{{ user }}"
+        group: "{{ group }}"
+        mode: 0755
+    - name: copy command encode
+      become: yes
+      become_method: sudo
+      copy:
+        src: "../files/encode_video.py"
+        dest: "{{ django_path }}/pod/video/management/commands/"
+        directory_mode: yes
+        owner: "{{ user }}"
+        group: "{{ group }}"
+        mode: 0755
+
+  tags:
+    - copycommands
+
+- name : copy bash files
+  hosts: webservers
+  remote_user: root
+  tasks:
+    - name: copy indexall
+      template:
+        src: ../templates/indexall.sh.j2
+        dest: "/home/pod/indexall.sh"
+        mode: a+x
+        owner: "{{ user }}"
+        group: "{{ group }}"
+    - name: copy viewcount
+      template:
+        src: ../templates/livecounter.sh.j2
+        dest: "/home/pod/livecounter.sh"
+        mode: a+x
+        owner: "{{ user }}"
+        group: "{{ group }}"
+
+  tags:
+    - bash
+- name: install bbb-recorder
+  hosts: encodeservers
+  remote_user: root
+  tasks:
+    - include: './tasks/pod_bbbrecorderlibraries.yml'
+  tags:
+    - bbb
+
+
+
+- name: install bbb-recorder
+  hosts: encodeservers
+  remote_user: pod
+  tasks:
+    - include: './tasks/pod_bbbrecorder.yml'
+  tags:
+    - bbb
+
+#- name: install rp
+#  hosts: dbservers
+#  gather_facts: yes
+#  remote_user: root
+#  tasks:
+#    - include: './tasks/pod_haproxy.yml'
+#  tags:
+#    - proxy
+
+- name: install rp
+  hosts: rpserver
+  remote_user: root
+  roles:
+    - { role: ansible-role-haproxy }
+  tasks:
+    - include: './tasks/pod_haproxy.yml'
+  tags:
+    - proxy
+#il faudra mettre le bon template ensuite
+
+- name: install hpc
+  hosts: hpcserver
+  remote_user: "{{ remote_user }}"
+  tasks:
+    - include: './tasks/pod_installhpc.yml'
+  tags:
+    - hpc
+
+- name: install streaming
+  hosts: streamingservers
+  remote_user: root
+  roles:
+    - { role: ansible-role-nginx }
+  tasks:
+    - include: './tasks/pod_streaming.yml'
+
+  tags:
+    - streaming
+
+- name: Install node exporter
+  hosts: all, !hpcserver, !dbservers
+  remote_user: root
+  roles:
+    - role: ansible-role-node_exporter
+  tags:
+    - monitoring
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

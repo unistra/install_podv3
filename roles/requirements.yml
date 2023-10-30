@@ -1,0 +1,37 @@
+- name: ansible-role-repo-epel
+  src: geerlingguy.repo-epel
+
+- name: ansible-role-redis
+  src: geerlingguy.redis
+
+- name: ansible-role-elasticsearch
+  src: geerlingguy.elasticsearch
+
+- name: ansible-role-haproxy
+  src: geerlingguy.haproxy
+
+- name: ansible-role-java
+  src: geerlingguy.java
+
+- name: ansible-role-nginx
+  src: geerlingguy.nginx
+
+- name: ansible-role-node_exporter
+  src: geerlingguy.node_exporter
+
+- name: ansible-role-postgresql
+  src: geerlingguy.postgresql
+
+- name: ansible-role-rabbitmq
+  src: geerlingguy.rabbitmq
+
+- name: ansible-role-redis
+  src: geerlingguy.redis
+# role maison à revoir
+#- name: ansible-role-rtmp
+
+# from GitHub, overriding the name and specifying a specific tag
+# - src: https://github.com/bennojoy/nginx
+#   version: master
+#   name: nginx_role
+

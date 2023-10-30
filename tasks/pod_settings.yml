@@ -1,0 +1,18 @@
+- name: create custom directory
+  file:
+    path: "{{ django_path }}/{{ custom_path }}"
+    recurse: yes
+    owner: "{{ user }}"
+    group: "{{ group }}"
+    mode: 0775
+    state: directory
+
+
+- name: settings_local
+  template:
+    src: ../templates/settings/{{ version_esup }}/settings_local.j2
+    dest: "{{ django_path }}/{{ custom_path }}/settings_local.py"
+    owner: "{{user}}"
+    group: "{{group}}"
+    mode: 0755
+

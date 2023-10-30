@@ -1,0 +1,99 @@
+
+- name: install nfs-kernel-server
+  become: yes
+  become_method: sudo
+  apt:
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - nfs-kernel-server
+    - nfs-common
+  when: inventory_hostname in groups['nfsserver'] and install_nfs_server|lower == 'true'
+
+
+#- debug:
+#    msg: System {{ inventory_hostname }} has uuid {{ install_nfs_server }}
+#  when: inventory_hostname in groups['nfsserver']
+
+- pause:
+    seconds: 10
+
+- name: create sharefolder
+  become: yes
+  become_method: sudo
+  file:
+    path: "{{ nfs_dir }}"
+    state: directory
+    mode: 0755
+    owner: pod
+    group: pod
+    recurse: yes
+  when: inventory_hostname in groups['nfsserver'] and install_nfs_server|lower == 'true'
+
+
+- name: /etc/exports
+  become: yes
+  become_method: sudo
+  template:
+    src: ../templates/exports.j2
+    dest: /etc/exports
+    owner: root
+    group: root
+  when: inventory_hostname in groups['nfsserver'] and install_nfs_server|lower == 'true'
+
+- name: sudo exportfs -a
+  become: yes
+  become_method: sudo
+  command: exportfs -a
+  when: inventory_hostname in groups['nfsserver'] and install_nfs_server|lower == 'true'
+
+
+- name: restart nfs server
+  become: yes
+  become_method: sudo
+  service:
+    name: nfs-kernel-server.service
+    state: restarted
+  when: inventory_hostname in groups['nfsserver'] and install_nfs_server|lower == 'true'
+
+
+- name: install
+  become: yes
+  become_method: sudo
+  apt:
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - nfs-common
+  when: inventory_hostname in groups['nfsclient'] and install_nfs_server|lower == 'true'
+
+
+- name: Create the mount point if not present
+  file:
+    path: "{{ nfs_dir }}"
+    state: directory
+    owner: pod
+    group: pod
+    mode: 0755
+    recurse: yes
+  when: inventory_hostname in groups['nfsclient'] and install_nfs_server|lower == 'true'
+
+- name: mount sharefolder on clients
+  become: yes
+  become_method: sudo
+  command: mount  {{ hostvars[groups['nfsserver'][0]].ansible_default_ipv4.address }}:{{ nfs_dir }} {{ nfs_dir }}
+  when: inventory_hostname in groups['nfsclient'] and install_nfs_server|lower == 'true'
+
+
+#- name: Mount an NFS volume
+#  ansible.posix.mount:
+#    src: "{{ hostvars[groups['nfsserver'][0]].ansible_default_ipv4.address }}:{{ nfs_dir }}"
+#    path: "{{ nfs_dir }}"
+#    opts: rw,sync,hard,intr
+#    state: mounted
+#    fstype: nfs
+#  when: inventory_hostname in groups['nfsclient'] and install_nfs_server|lower == 'true'
+
+
+
+

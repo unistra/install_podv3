@@ -1,0 +1,43 @@
+#chmod -R 755 /django/ à faire
+
+- name: source  "/home/{{ user }}/.bashrc"
+  become: yes
+  become_user: "{{ user }}"
+  shell: . "/home/{{ user }}/.bashrc"
+
+
+#- name:  create_pod_index
+#  django_manage:
+#    command: create_pod_index
+#    app_path: "{{ django_path }}"
+#    virtualenv: "{{ venv_path }}/{{ venv }}"
+#  become: yes  
+#  become_user: "{{ user }}"
+#  when: inventory_hostname == leader
+
+ 
+  
+
+- name:  Create an initial superuser
+  django_manage:
+    command: createsuperuser --noinput --username={{ superuser }} --email={{ mail_superuser }}
+    app_path: "{{ django_path }}"
+    virtualenv: "{{ venv_path }}/{{ venv }}"
+  become: yes  
+  become_user: "{{ user }}"
+  ignore_errors: yes
+  when: inventory_hostname == leader
+
+
+- name: static files management
+  django_manage:
+    command: collectstatic
+    app_path: "{{ django_path }}"
+    virtualenv: "{{ venv_path }}/{{ venv }}"
+  become: yes  
+  become_user: "{{ user }}" 
+  when: inventory_hostname == leader
+ 
+
+
+

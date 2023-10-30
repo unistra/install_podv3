@@ -1,0 +1,97 @@
+
+
+- pip:
+    requirements: "{{ django_path }}/requirements.txt"
+    virtualenv: "{{ venv_path }}/{{ venv }}"
+    virtualenv_python: "/usr/bin/{{ pythonv }}"
+    chdir: "{{ django_path }}"
+  become: yes
+  become_user: "{{ user }}"
+  when:  inventory_hostname in groups['webservers']  or inventory_hostname in groups['encodeservers']
+
+- name:  makemigrations
+  django_manage:
+    command: makemigrations
+    app_path: "{{ django_path }}"
+    virtualenv: "{{ venv_path }}/{{ venv }}"
+  become: yes
+  become_user: "{{ user }}"
+  when:  inventory_hostname in groups['webservers'] and inventory_hostname == leader
+- name:  migrate
+  django_manage:
+    command: migrate
+    app_path: "{{ django_path }}"
+    virtualenv: "{{ venv_path }}/{{ venv }}"
+  become: yes
+  become_user: "{{ user }}"
+  when:  inventory_hostname in groups['webservers'] and inventory_hostname == leader
+
+- name: static files management
+  django_manage:
+    command: collectstatic
+    app_path: "{{ django_path }}"
+    virtualenv: "{{ venv_path }}/{{ venv }}"
+  become: yes
+  become_user: "{{ user }}"
+  when:  inventory_hostname in groups['webservers']
+
+- name: restart nginx
+  become: yes
+  become_method: sudo
+  systemd:
+    name: nginx
+    state: restarted
+  when:  inventory_hostname in groups['webservers']
+
+- name: restart uwsgi-pod.service
+  become: yes
+  become_method: sudo
+  systemd:
+    name: uwsgi-pod.service
+    state: restarted
+  when:  inventory_hostname in groups['webservers']
+
+- name: restart uwsgi-pod.service
+  become: yes
+  become_method: sudo
+  systemd:
+    name: uwsgi-pod.service
+    state: restarted
+  when:  inventory_hostname in groups['webservers']
+
+- name: restart uwsgi-pod.service
+  become: yes
+  become_method: sudo
+  systemd:
+    name: uwsgi-pod.service
+    state: restarted
+  when:  inventory_hostname in groups['webservers']
+
+- name: restart celeryd
+  become: yes
+  become_method: sudo
+  systemd:
+    name: celeryd.service
+    state: restarted
+  when:  inventory_hostname in groups['encodeservers']
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,62 @@
+- name: install nginx
+  become: yes
+  become_method: sudo
+  apt:
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - nginx
+    - nginx-extras
+
+- name: adding existing user '{{ user }}' to group www-data
+  become: yes
+  become_method: sudo
+  user:
+    name: '{{ user }}'
+    groups: www-data
+    append: yes
+
+
+- name: copy pod_nginx.conf into custom directory
+  become: yes
+  become_method: sudo
+  template:
+    src: "../templates/pod3_nginx.conf.j2"
+    dest: "{{django_path}}/pod/custom/pod_nginx.conf"
+    owner: "{{user}}"
+    group: "{{group}}"
+    mode: 0744
+
+- name: copy nginx.conf into /etc/nginx/ directory
+  become: yes
+  become_method: sudo
+  template:
+    src: "../templates/nginx.conf.j2"
+    dest: "/etc/nginx/nginx.conf"
+
+
+
+- name : create link  into nginx directory
+  become: yes
+  become_method: sudo
+  file:
+   src: "{{django_path}}/pod/custom/pod_nginx.conf"
+   dest: "/etc/nginx/sites-enabled/pod_nginx.conf"
+   state: link
+  
+- name: Make sure a service is running
+  become: yes
+  become_method: sudo
+  systemd:
+    state: started
+    name: nginx
+
+- name: enable service nginx
+  become: yes
+  become_method: sudo
+  systemd:
+    name: nginx
+    enabled: yes
+  
+
+

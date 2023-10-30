@@ -1,0 +1,13 @@
+- name: install packages
+  become: yes
+  become_method: sudo
+  apt:
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - git
+    - curl
+    - vim
+    - gettext
+
+

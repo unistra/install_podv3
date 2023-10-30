@@ -1,0 +1,35 @@
+
+# pod_uwsgi.ini file
+[uwsgi]
+ 
+# Django-related settings
+# the base directory (full path)
+chdir           = {{ django_path }}
+# Django's wsgi file
+module          = pod.wsgi
+
+# the virtualenv (full path)
+home            = {{ venv_path }}/{{ venv }}
+# process-related settings
+# master
+master          = true
+# maximum number of worker processes
+processes       = 10
+# the socket (use the full path to be safe)
+socket          = {{ django_path }}/uwsgi/podv3.sock
+chown-socket    = {{ user }}:www-data
+# ... with appropriate permissions - may be needed
+#chmod-socket    = 666
+chmod-socket    = 666
+# clear environment on exit
+vacuum          = true
+#
+daemonize       = {{ django_path }}/uwsgi/uwsgi-pod.log
+#
+die-on-term     = true
+limit-as        = 5120
+max-requests    = 50000 #avant 5000
+
+
+
+

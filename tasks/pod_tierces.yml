@@ -1,0 +1,15 @@
+- pip:
+    requirements: "{{ django_path }}/requirements.txt"
+    virtualenv: "{{ venv_path }}/{{ venv }}"
+    virtualenv_python: /usr/bin/{{ pythonv }}
+    chdir: "{{ django_path }}"
+  become: yes  
+  become_user: "{{ user }}"
+
+- pip:
+    name: psycopg2-binary
+    virtualenv: "{{ venv_path }}/{{ venv }}"
+  become: yes  
+  become_user: "{{ user }}"
+
+

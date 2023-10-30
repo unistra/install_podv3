@@ -1,0 +1,49 @@
+- name: add user {{ ftp_newuser }}
+  become: yes
+  become_method: sudo
+  user:
+    name: "{{ ftp_newuser }}"
+    shell: /bin/bash
+    groups:
+      - "{{ ftp_group }}"
+    append: yes 
+    state: present
+    home: "{{ ftp_path }}/{{ ftp_newuser }}"
+    createhome: yes
+
+- name: delete not used file
+  become: yes
+  become_method: sudo
+  command: rm {{ ftp_path }}/{{ ftp_newuser }}/{{ item }}
+  with_items:
+    - '.bash_logout'
+    - '.bashrc'
+    - '.profile' 
+  ignore_errors: yes
+
+
+- name: make directory writable
+  become: yes
+  become_method: sudo
+  command: chmod -R 777 {{ ftp_path }}/{{ ftp_newuser }}
+
+- name: make directory writable
+  become: yes
+  become_method: sudo
+  command: chown -R {{ ftp_newuser }}:{{ ftp_group }} {{ ftp_path }}/{{ ftp_newuser }}
+
+
+- name: /etc/vsftpd.userlist
+  become: yes
+  become_method: sudo
+  lineinfile:
+    path: /etc/vsftpd.userlist
+    line: "{{ ftp_newuser }}"
+
+- name: Start FTP Service
+  become: yes
+  become_method: sudo
+  service: 
+    name: vsftpd 
+    state: restarted 
+    enabled: yes

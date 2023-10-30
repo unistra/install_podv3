@@ -1,0 +1,79 @@
+#creer une cle pour l'utilisateur pod
+#la mettre sur hpc
+#clé hpc a faire
+#A mettre sur pod
+
+#- name: create remote group
+#  group:
+#    name: "{{ remote_group }}"
+#    state: present
+
+#- name: Add the user "{{ remote_user }}"
+#  user:
+#    name: "{{ remote_user }}"
+#    groups:
+#      - sudo
+#      - "{{ remote_group }}"
+#    shell: /bin/bash
+#    append: yes
+#    state: present
+#    createhome: yes
+#    home: "{{ remote_user_home }}"
+
+#- name: Allow 'sudo' group to have passwordless sudo
+#  lineinfile:
+#    dest: /etc/sudoers
+#    state: present
+#    regexp: '^%sudo'
+#    line: '%sudo ALL=(ALL) NOPASSWD: ALL'
+#    validate: 'visudo -cf %s'
+
+- name: create encode directory slurm-encoding-out tmp
+  file:
+    path: "{{item}}"
+    owner: "{{ remote_user }}"
+    group: "{{ remote_group }}"
+    recurse: yes
+    state: directory
+  with_items: ["{{ encode_path }}","{{ encode_path }}/tmp", "{{ remote_user_home }}/slurm-encoding-out"]
+
+
+
+- name: copy encode_gpu.py
+  copy:
+    src: "encode_gpu.py"
+    dest: "{{ encode_path }}/encode_gpu.py"
+    owner: "{{ remote_user }}"
+    group: "{{ remote_group }}"
+    mode: 0755
+
+- name: copy encode.template files
+  template:
+    src: "remote/encode.template.j2"
+    dest: "{{ encode_path }}/encode.template"
+    owner: "{{ remote_user }}"
+    group: "{{ remote_group }}"
+    mode: 0755
+
+- name: "copy submit.sh"
+  template:
+    src: "remote/submit.sh.j2"
+    dest: "{{ encode_path }}/submit.sh"
+    owner: "{{ remote_user }}"
+    group: "{{ remote_group }}"
+    mode: 0755
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

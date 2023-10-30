@@ -1,0 +1,23 @@
+[Unit]
+Description=Pod uWSGI app
+After=syslog.target
+
+[Service]
+ExecStart=/usr/local/bin/uwsgi --ini {{ django_path }}/pod/custom/pod_uwsgi.ini \
+        --enable-threads \
+        --pidfile /tmp/pod.pid
+ExecStop=/usr/local/bin/uwsgi --stop /tmp/pod.pid
+User={{ user }}
+Group=www-data
+#Restart=on-failure
+KillSignal=SIGQUIT
+Type=forking
+#Type=notify
+#NotifyAccess=all
+StandardError=syslog
+
+
+[Install]
+WantedBy=multi-user.target
+
+

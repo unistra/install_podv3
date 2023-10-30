@@ -1,0 +1,52 @@
+# Video encoding automation
+#
+# Cyrille TOULET <cyrille.toulet@univ-lille.fr>
+# Nicolas Can <nicolas.can@univ-lille.fr>
+
+
+# Define variables
+GPU_TYPE="{{ gpu_type }}"
+BASE_DIR="{{ encode_path }}"
+WORK_DIR="{{ encode_path }}/tmp"
+HOME_DIR="{{ remote_user_home }}"
+REMOTE_SERVER="{{ user }}@{{ pod_host }}"
+REMOTE_MEDIA_PATH="{{ media_path }}"
+POD_REMOTE_HOST="{{ pod_host }}"
+JOB_NAME="undefined-job"
+INPUT_FILE="default-input.mp4"
+DEBUG=False
+
+
+while getopts n:i:v:u:d: option
+do
+case "${option}"
+in
+n) JOB_NAME=${OPTARG};;
+i) INPUT_FILE=${OPTARG};;
+v) VIDEO_ID=${OPTARG};;
+u) USER_ID=${OPTARG};;
+d) DEBUG=${OPTARG};;
+esac
+done
+
+# Step 1: Create encoding directory
+mkdir -p ${BASE_DIR}/${JOB_NAME}
+
+# Step 2: Generate batch file
+cp $(dirname $(readlink -f $0))/encode.template ${BASE_DIR}/${JOB_NAME}/encode.job
+sed -i "s|{GPU_TYPE}|${GPU_TYPE}|g" ${BASE_DIR}/${JOB_NAME}/encode.job
+sed -i "s|{BASE_DIR}|${BASE_DIR}|g" ${BASE_DIR}/${JOB_NAME}/encode.job
+sed -i "s|{WORK_DIR}|${WORK_DIR}|g" ${BASE_DIR}/${JOB_NAME}/encode.job
+sed -i "s|{JOB_NAME}|${JOB_NAME}|g" ${BASE_DIR}/${JOB_NAME}/encode.job
+sed -i "s|{REMOTE_SERVER}|${REMOTE_SERVER}|g" ${BASE_DIR}/${JOB_NAME}/encode.job
+sed -i "s|{REMOTE_MEDIA_PATH}|${REMOTE_MEDIA_PATH}|g" ${BASE_DIR}/${JOB_NAME}/encode.job
+sed -i "s|{INPUT_FILE}|${INPUT_FILE}|g" ${BASE_DIR}/${JOB_NAME}/encode.job
+sed -i "s|{VIDEO_ID}|${VIDEO_ID}|g" ${BASE_DIR}/${JOB_NAME}/encode.job
+sed -i "s|{USER_ID}|${USER_ID}|g" ${BASE_DIR}/${JOB_NAME}/encode.job
+sed -i "s|{POD_REMOTE_HOST}|${POD_REMOTE_HOST}|g" ${BASE_DIR}/${JOB_NAME}/encode.job
+sed -i "s|{DEBUG}|${DEBUG}|g" ${BASE_DIR}/${JOB_NAME}/encode.job
+
+
+# Step 2: Submit slurm job
+cd ${HOME_DIR}/slurm-encoding-out
+sbatch ${BASE_DIR}/${JOB_NAME}/encode.job

@@ -1,0 +1,45 @@
+
+
+
+- name: restart nginx
+  become: yes
+  become_method: sudo
+  systemd:
+    name: nginx
+    state: restarted
+
+
+- name: restart uwsgi-pod.service
+  become: yes
+  become_method: sudo
+  systemd:
+    name: uwsgi-pod.service
+    state: started
+
+
+
+- name: restart uwsgi-pod.service
+  become: yes
+  become_method: sudo
+  systemd:
+    name: uwsgi-pod.service
+    state: started
+
+
+- name: restart uwsgi-pod.service
+  become: yes
+  become_method: sudo
+  systemd:
+    name: uwsgi-pod.service
+    state: started
+
+
+
+
+
+
+
+
+
+
+

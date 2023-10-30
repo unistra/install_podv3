@@ -1,0 +1,47 @@
+- name: delete old migrations
+  command: "{{ item }}"
+  args:
+    chdir: "{{ django_path }}"
+  become: yes  
+  become_user: "{{ user }}"
+  with_items:
+    - find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
+    - find . -path "*/migrations/*.pyc"  -delete
+
+
+- name:  makemigrations
+  django_manage:
+    command: makemigrations
+    app_path: "{{ django_path }}"
+    virtualenv: "{{ venv_path }}/{{ venv }}"
+  become: yes  
+  become_user: "{{ user }}"
+  when: inventory_hostname == leader
+
+
+
+
+- name:  migrate
+  django_manage:
+    command: migrate
+    app_path: "{{ django_path }}"
+    virtualenv: "{{ venv_path }}/{{ venv }}"
+  become: yes  
+  become_user: "{{ user }}"
+  when: inventory_hostname == leader
+
+
+- name: loaddata video
+  django_manage:
+    command: loaddata
+    app_path: "{{ django_path }}"
+    virtualenv: "{{ venv_path }}/{{ venv }}"
+    fixtures: "{{ item }}"
+  with_items:
+    - pod/video/fixtures/initial_data.json
+    - pod/main/fixtures/initial_data.json
+  when: inventory_hostname == leader
+
+    
+
+

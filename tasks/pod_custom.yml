@@ -1,0 +1,89 @@
+
+
+- name: Recursively remove directory
+  become: yes
+  become_method: sudo
+  file:
+    path: "{{ django_path }}/{{ custom_path }}/static"
+    state: absent
+  ignore_errors: false
+
+- name: Recursively remove directory
+  become: yes
+  become_method: sudo
+  file:
+    path: "{{ django_path }}/{{ custom_path }}/templates"
+    state: absent
+  ignore_errors: false
+
+
+- name: create static custom directory
+  become: yes
+  become_method: sudo
+  file:
+    path: "{{ django_path }}/{{ custom_path }}/static/"
+    state: directory
+    mode: 0755
+    owner: "{{ user }}"
+    group: "{{ group }}"
+
+- name: create templates custom directory
+  become: yes
+  become_method: sudo
+  file:
+    path: "{{ django_path }}/{{ custom_path }}/templates"
+    state: directory
+    mode: 0755
+    owner: "{{ user }}"
+    group: "{{ group }}"
+
+- name: copy static files
+  become: yes
+  become_method: sudo
+  copy:
+    src: "../files/custom/{{ custom_type }}/static/"
+    dest: "{{ django_path }}/{{ custom_path }}/static/"
+    directory_mode: yes
+    owner: "{{ user }}"
+    group: "{{ group }}"
+    mode: 0755
+
+- name: copy templates files
+  become: yes
+  become_method: sudo
+  copy:
+    src: "../files/custom/{{ custom_type }}/templates/"
+    dest: "{{ django_path }}/{{ custom_path }}/templates/"
+    directory_mode: yes
+    owner: "{{ user }}"
+    group: "{{ group }}"
+    mode: 0755
+
+- name: "droit {{ django_path }}/{{ custom_path }}/static/"
+  become: yes
+  become_method: sudo
+  command: chmod -R 755 {{ django_path }}/{{ custom_path }}/static/
+
+- name: "droit {{ custom_path }}/templates/"
+  become: yes
+  become_method: sudo
+  command: chmod -R 755 {{ django_path }}/{{ custom_path }}/templates/
+
+- name: static files management
+  django_manage:
+    command: collectstatic
+    app_path: "{{ django_path }}"
+    virtualenv: "{{ venv_path }}/{{ venv }}"
+  become: yes  
+  become_user: "{{ user }}"
+
+- name: Set 755 to django_path
+  remote_user: root
+  command: chmod -R 755 {{ django_path }}
+  when: inventory_hostname in groups['webservers']
+
+
+
+
+
+

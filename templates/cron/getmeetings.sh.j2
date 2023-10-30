@@ -1,0 +1,9 @@
+#!/bin/bash
+
+export WORKON_HOME=/data/www/pod/.virtualenvs
+export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3.8
+cd /data/www/pod/django_projects
+source /usr/local/bin/virtualenvwrapper.sh
+workon django_pod
+python manage.py bbb main
+

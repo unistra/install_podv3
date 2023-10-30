@@ -1,0 +1,36 @@
+- name: send initial.sql.j2 to the leader
+  template:
+    src: "../templates/initial.sql.j2"
+    dest: "{{ file_upload_temp_dir }}/initial.sql"
+  when: inventory_hostname == leader
+
+
+- name: install postgresql client
+  apt:
+    name: postgresql-client
+    state: present
+
+- debug:
+    msg: "psql -h {{ hostvars[groups['dbservers'][0]].inventory_hostname}}  -U {{ hostvars[groups['dbservers'][0]].postgresql_users[0].name}} -d {{ hostvars[groups['dbservers'][0]].postgresql_databases[0].name}} < {{ file_upload_temp_dir }}/initial.sql"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

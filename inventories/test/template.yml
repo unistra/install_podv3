@@ -1,0 +1,183 @@
+all:
+    #remote_user_home: /b/home/di/{{ remote_user }}
+  children:
+    dbservers:
+      hosts:
+        podv3-test-db.domain.fr:
+      vars:
+        ansible_ssh_common_args: -J {{ user_bastion }}@bastion-domain.fr
+        postgresql_restarted_state: "restarted"
+        postgresql_service_state: started
+        postgresql_service_enabled: true
+        postgresql_global_config_options:
+          - option: listen_addresses
+            value: '*'
+          - option: log_directory
+            value: 'log'
+        postgresql_hba_entries:
+          - { type: local, database: all, user: postgres, auth_method: peer }
+          - { type: local, database: all, user: all, auth_method: trust }
+          - { type: host, database: all, user: all, address: '127.0.0.1/32', auth_method: md5 }
+          - { type: host, database: all, user: all, address: '::1/128', auth_method: md5 }
+          - { type: host, database: all, user: all, address: '<ip>/24', auth_method: md5 } #Mettre le masque d'ip de vos encodeurs et backends
+        postgresql_databases:
+          - name: <nombdd>
+        postgresql_users:
+          - name: <userbdd>
+            db: <nombdd>
+            password: <passwordbdd>
+    elasticsearch:
+      hosts:
+        podv3-test-elasticsearch.domain.fr:
+      vars:
+        ansible_ssh_common_args: -J {{ user_bastion }}@bastion-domain.fr
+        elasticsearch_version: '7.x'
+        elasticsearch_service_state: started
+        elasticsearch_service_enabled: true
+        elasticsearch_network_host: 0.0.0.0
+        elasticsearch_http_port: 9200
+        elasticsearch_package_state: latest
+        elasticsearch_package: elasticsearch
+        elasticsearch_heap_size_min: 2g
+        elasticsearch_heap_size_max: 2g
+        java_packages:
+          - openjdk-11-jdk
+        elasticsearch_extra_options: |  # Dont forget the pipe!
+          discovery.seed_hosts: ['127.0.0.1','{{ inventory_hostname }}']
+          cluster.initial_master_nodes: ["pod-1"]
+          node.name: pod-1
+          cluster.name: pod-application
+#rabbitmq sur le frontal
+    rabbitmq:
+      hosts:
+        podv3-test-rabbit.domain.fr:
+      vars:
+        ansible_ssh_common_args: -J {{ user_bastion }}@bastion-domain.fr
+        rabbitmq_daemon: rabbitmq-server
+        rabbitmq_state: started
+        rabbitmq_enabled: true
+        rabbitmq_user: pod
+        rabbitmq_password: ******
+        rabbitmq_vhost: rabbitpod
+        rabbitmq_version: "3.9.13"
+        rabbitmq_deb_url: "http://archive.ubuntu.com/ubuntu/pool/main/r/rabbitmq-server/rabbitmq-server_3.9.13-1ubuntu0.22.04.1_all.deb"
+    webservers:
+      hosts:
+        podv3-test-backend.domain.fr:
+        podv3-test-backend.domain.fr:
+      vars:
+        ansible_ssh_common_args: -J {{ user_bastion }}@bastion-domain.fr
+    encodeservers:
+      hosts:
+        podv3-test-encoder-1.domain.fr:
+        podv3-test-encoder-2.domain.fr:
+      vars:
+        ansible_ssh_common_args: -J {{ user_bastion }}@bastion-domain.fr
+    streamingservers:
+      hosts:
+        podv3-test-streaming.domain.fr:
+      vars:
+        ansible_ssh_common_args: -J {{ user_bastion }}@bastion-domain.fr
+    nfsserver:
+      hosts:
+      vars:
+        ansible_ssh_common_args: -J {{ user_bastion }}@bastion-domain.fr
+    nfsclient:
+      hosts:
+    hpcserver:
+      hosts:
+        hpc.domain.fr:
+    redisserver:
+      hosts:
+        podv3-test-redis.domain.fr:
+      vars:
+        ansible_ssh_common_args: -J {{ user_bastion }}@bastion-domain.fr
+        redis_bind_interface: 0.0.0.0
+
+
+  vars:
+    pythonv: python3
+    group: pod
+    user: pod
+    userpasswd: ***********************
+    root_path: /django/www/{{ user }}
+    venv_path: /django/www/{{ user }}/.virtualenvs
+    venv: django_pod3
+    django_path_root: /django
+    django_path: "{{ root_path }}/django_projects"
+    pod_host: 'podv3-test.domain.fr'
+    pod_host_ip: '<ip du lb>' #ip du load balancer
+    #settings
+    settings_debug: True
+
+    settings_secret_key: ********************
+    settings_smtp_host: mail.domain.fr
+    settings_smtp_default_email: '<email admin>'
+    settings_admins: "(('Prenom Nom', '<email admin'),)"
+    settings_enable_celery: True
+    restrict_edit_video: False
+    superuser: admin
+    mail_superuser: <email admin>
+    mail_second_admin: <email admin>  #mail de l'installateur
+
+    #nfs dir
+    install_nfs_server: false
+    nfs_dir: "{{ media_path_root }}/podv3"
+    media_path: "{{ media_path_root }}/podv3/media"
+    static_path: "{{ media_path_root }}/podv3/static"
+    media_path_root: "/nfs/podv3-test"
+    file_upload_temp_dir: "{{ media_path_root }}/temp"
+
+    #certificats ssl
+    install_ssl: true #ne pas oublier de lancer le tag ssl
+
+    #custom de l'appli
+    install_custom: true #lancer le tag custom
+    custom_type: 'normal' #Le type de custom 'normal' ou 'streaming'
+    custom_title: 'Podv3 test migree'
+    custom_desc: 'Plateforme test migree de podv3'
+
+    #install ftp
+    install_ftp: false  #lancer le tag ftp
+    ftp_path: "{{ media_path }}/uploads"
+    ftp_user: "vsftpd"
+    ftp_group: "vsftpd"
+
+
+    #git
+    version_esup: '3.1.1'
+    version_install: '3.1.1'
+    version_update: '3.4'
+    backup_directory: "{{ media_path_root }}/podv3/backup"
+    leader: podv3-test-backend.domain.fr
+    custom_path: pod/custom
+    local_temp_dir: "/tmp/git/podv3"
+
+    #bbb
+    use_bbb: false
+    default_bbb_plugin_root: '/home/pod/recorder'
+    bbb_plugin_directory: 'bbb-recorder'
+    default_bbb_path: '/datas/podv3/bbb-recorder'
+    bbb_server_url: 'https://bbb-prod-rp.domain.fr/'
+    bbb_secret_key: '********************'
+
+    default_bbb_type_id: 1
+    bbb_days_delete: 90
+
+    #install_remote
+    install_remote: false
+    remote_user: podmaq
+    remote_group: di
+    remote_user_home: /home2020/home/di/podtest
+    remote_host: hpc.domain.fr
+    remote_key: /home/pod/.ssh/id_ed25519
+    remote_cmd: "{{ encode_path }}/submit.sh"
+    encode_path: "{{ remote_user_home }}/encodage_pod"
+    gpu_type: GTX1080
+
+    rest_page_size: 16
+    #token streaming
+    token_streaming: '*******************'
+
+    host_redirect: ''
+    handle_redirection: false

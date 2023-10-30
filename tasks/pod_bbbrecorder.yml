@@ -1,0 +1,85 @@
+
+- name: delete git directory
+  command: "rm -rf {{ default_bbb_plugin_root }}"
+
+
+- name: "{{ default_bbb_plugin_root }}"
+  file:
+    path: "{{ default_bbb_plugin_root }}"
+    mode: 0755
+    state: directory
+
+- name: "{{ default_bbb_plugin_root }}/{{ bbb_plugin_directory }}"
+  file:
+    path: "{{ default_bbb_plugin_root }}/{{ bbb_plugin_directory }}"
+    mode: 0755
+    state: directory
+
+- name: "{{ default_bbb_path }}"
+  file:
+    path: "{{ default_bbb_path }}"
+    mode: 0777
+    state: directory
+    owner: "{{user}}"
+    group: "{{group}}"
+
+- name: "{{ default_bbb_path }}/logs"
+  file:
+    path: "{{ default_bbb_path }}/logs"
+    mode: 0777
+    state: directory
+    owner: "{{user}}"
+    group: "{{ group }}"
+
+- name: "/home/pod/Downloads : repertoire download de bbb"
+  file:
+    path: "/home/pod/Downloads"
+    mode: 0777
+    state: directory
+    owner: "{{user}}"
+    group: "{{ group }}"
+
+- name: "Get the bbb-recorder"
+  git:
+    repo: 'https://github.com/jibon57/bbb-recorder'
+    dest: "{{ default_bbb_plugin_root }}/{{ bbb_plugin_directory }}"
+    version: master
+
+- name: delete .git directory
+  command: "rm -rf {{ default_bbb_plugin_root }}/{{ bbb_plugin_directory }}/.git"
+
+- name: install bbb-recorder
+  command: npm install --ignore-scripts
+  args:
+    chdir: '{{ default_bbb_plugin_root }}/{{ bbb_plugin_directory }}'
+
+
+- name: config .env
+  template:
+    src: "../templates/bbb_recorder_env.j2"
+    dest: "{{ default_bbb_plugin_root }}/{{ bbb_plugin_directory }}/.env"
+    mode: 0644
+
+- name: "{{ default_bbb_plugin }}"
+  file:
+    path: "{{ default_bbb_plugin_root }}/{{ bbb_plugin_directory }}"
+    state: directory
+    recurse: yes
+    owner: "{{user}}"
+    group: "{{group}}"
+
+- name: "getmettings.sh à mettre dans home/pod"
+  template:
+    src: ../templates/getmeetings.sh.j2
+    dest: "/home/pod/getmeetings.sh"
+    owner: "{{user}}"
+    group: "{{group}}"
+    mode: 0755
+
+
+
+
+
+
+
+

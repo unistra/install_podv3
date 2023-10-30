@@ -1,0 +1,27 @@
+
+
+settings_use_podfile: True
+settings_use_cas: True
+cas_gateway: True
+populate: LDAP
+cas_url: http://************/cas/
+ldap_serveur: '******************'
+ldap_port: 636
+ldap_ssl: True
+
+bind_dn: '**********************'
+bind_pwd: ********************
+
+pod_source:  'https://github.com/EsupPortail/Esup-Pod.git'
+
+base_dn: 'ou=***,ou=***,o=***'
+ldap_user_search: ('ou=***,ou=***,o=***', "(uid=%(uid)s)")
+
+
+ssl_certificate: '*******.pem'
+ssl_certificate_key: '*******.key'
+
+file_max_upload_size: 20
+video_max_upload_size: 4
+file_allowed_ext: ( 'doc', 'docx', 'odt', 'pdf', 'xls', 'xlsx', 'ods', 'ppt', 'pptx', 'txt', 'html', 'htm', 'vtt', 'srt', 'webm', 'ts', )
+image_allowed_ext: ( 'jpg', 'jpeg', 'bmp', 'png', 'gif', 'tiff', )
